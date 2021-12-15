@@ -15,7 +15,6 @@ class ReadOutlookMail:
         self.accounts = win32com.client.Dispatch("Outlook.Application").Session.Accounts
     
     def compare_file(self):
-        copyfile(src=mail_file, dst=mail_file_old)
         import filecmp
         result = filecmp.cmp(mail_file_old, mail_file)
         return result
@@ -27,7 +26,7 @@ class ReadOutlookMail:
             os.remove("%s" %(mail_file))
         else:
             print("The file does not exist")
-
+            
         print ('<<< Scanning Unread Mail >>>')
         result = []    
         inbox = self.outlook.GetDefaultFolder(6)
@@ -64,11 +63,11 @@ if __name__ == '__main__':
         diff_file = mail.compare_file()
         if diff_file == False:
             message = mail.send_notify()
-            
             # --- line ---
             token = 'token'
             line = LineMain()
             line.lineNotifyMessage(token=token, msg=message)
+            copyfile(src=mail_file, dst=mail_file_old)
         else:
             print ('Comapre the same mail , no send out')
     else:
