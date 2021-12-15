@@ -4,17 +4,25 @@ import win32com.client
 from datetime import date, datetime, timedelta
 from line import LineMain
 import os
+from shutil import copyfile
 
 mail_file = 'mail_list.txt'
+mail_file_old = 'mail_listOld.txt'
 
 class ReadOutlookMail:
     def __init__(self):
         self.outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
         self.accounts = win32com.client.Dispatch("Outlook.Application").Session.Accounts
     
+    def compare_file(self):
+        copyfile(src=mail_file, dst=mail_file_old)
+        import filecmp
+        result = filecmp.cmp(mail_file_old, mail_file)
+        return result
+    
     def check_mail(self):
-        
         # check file is exit
+
         if os.path.exists("%s" %(mail_file)):
             os.remove("%s" %(mail_file))
         else:
@@ -23,7 +31,6 @@ class ReadOutlookMail:
         print ('<<< Scanning Unread Mail >>>')
         result = []    
         inbox = self.outlook.GetDefaultFolder(6)
-        
         try:
             for message in inbox.Items:
                 if message.UnRead == True:
@@ -43,7 +50,7 @@ class ReadOutlookMail:
             return 0
 
     def send_notify(self):
-        
+
         with open("%s" %(mail_file),"r", encoding='UTF-8') as f:
             reading_file = f.read()
         return reading_file
@@ -54,11 +61,16 @@ if __name__ == '__main__':
     mail = ReadOutlookMail()
     get_mail_list = mail.check_mail()
     if get_mail_list == 1:
-        message = mail.send_notify()
-        # --- line ---
-        token = 'line token'
-        line = LineMain()
-        line.lineNotifyMessage(token=token, msg=message)
+        diff_file = mail.compare_file()
+        if diff_file == False:
+            message = mail.send_notify()
+            
+            # --- line ---
+            token = 'token'
+            line = LineMain()
+            line.lineNotifyMessage(token=token, msg=message)
+        else:
+            print ('Comapre the same mail , no send out')
     else:
         print ('No mail to send to Line')
 
